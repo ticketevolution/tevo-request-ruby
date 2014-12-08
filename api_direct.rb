@@ -1,5 +1,8 @@
+require 'rubygems'
 require "base64"
 require "openssl"
+require "rack"
+require 'faraday'
 require "curb"
 
 module TEVO
@@ -38,7 +41,6 @@ module TEVO
       :port      => HTTPS_PORT
     }
   }
-
 
   class Connection
     def _and(*predicates)
@@ -107,11 +109,10 @@ module TEVO
     def process_params(method, uri, params)
       alphabetized_url = "#{ uri }?"
       if (method == :GET)
-        alphabetized_url += build_nested_query(params)
+        alphabetized_url += Faraday::Utils.build_nested_query(params)
       end
       return alphabetized_url
     end
-
 
     def uri(path)
       parts = [].tap do |parts|
@@ -138,37 +139,6 @@ module TEVO
           string_to_sign
         )
       ).chomp
-    end
-
-    # Jacked from Faraday source.
-    # http://rubydoc.info/github/hrp/faraday/Faraday/Utils:build_nested_query
-    def build_nested_query(value, prefix = nil)
-      case value
-        when Array
-          value = value.sort
-          value.map { |v| build_nested_query(v, "#{ prefix }%5B%5D") }.join("&")
-        when Hash
-          as_array = value.sort_by { |k, v| k }
-          as_array.map { |el|
-            hash_key = el[0]
-            hash_val = el[1]
-            build_nested_query(hash_val, prefix ? "#{ prefix }%5B#{ escape(hash_key) }%5D" : escape(hash_key))
-          }.join("&")
-        when NilClass
-          prefix
-        else
-          raise ArgumentError, "value must be a Hash" if prefix.nil?
-          "#{ prefix }=#{ escape(value) }"
-      end
-    end
-
-    # Jacked from Faraday source.
-    # https://github.com/lostisland/faraday/blob/master/lib/faraday/utils.rb#l170
-    ESCAPE_RE = /[^a-zA-Z0-9 .~_-]/
-    def escape(s)
-      s.to_s.gsub(ESCAPE_RE) {|match|
-        '%' + match.unpack('H2' * match.bytesize).join('%').upcase
-      }.tr(' ', '+')
     end
   end
 end
