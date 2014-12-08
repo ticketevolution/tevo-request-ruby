@@ -68,7 +68,8 @@ module TEVO
 
       signature = sign(string_to_sign)
 
-      puts "...sending request: #{req_uri_alphabetized}"
+      puts "...sending"
+      puts " #{method}: #{req_uri_alphabetized}"
       curl_req = Curl::Easy.new(req_uri_alphabetized) do |curl|
         curl.connect_timeout = CONNECTION_TIMEOUT_SECONDS
         curl.headers['X-Token'] = @token
