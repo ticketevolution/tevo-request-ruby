@@ -5,54 +5,17 @@ require "rack"
 require 'faraday'
 require "curb"
 
+require File.expand_path("../config", __FILE__)
+
 module TEVO
-  HTTPS_PORT                 = 443
-  HTTPS                      = "https"
-  HTTP                       = "http"
+  HTTPS_PORT = 443
   CONNECTION_TIMEOUT_SECONDS = 10
-  CONFIGS = {
-    :development => {
-      :mode      => :development,
-      :protocol  => HTTP,   # http://api.lvh.me:3000
-      :subdomain => 'api',    # PROTOCOL SUBDOMAIN URL_BASE PORT
-      :url_base  => 'lvh.me',
-      :port      => 3000
-    },
-    :staging => {
-      :mode      => :staging,
-      :protocol  => HTTPS,
-      :subdomain => 'api',
-      :url_base  => 'staging.ticketevolution.com',
-    },
-
-    :sandbox => {
-      :mode      => :sandbox,
-      :protocol  => HTTPS,
-      :subdomain => 'api',
-      :url_base  => 'sandbox.ticketevolution.com',
-      :port      => HTTPS_PORT
-    },
-
-    :production => {
-      :mode      => :production,
-      :protocol  => HTTPS,
-      :subdomain => 'api',
-      :url_base  => 'ticketevolution.com',
-      :port      => HTTPS_PORT
-    }
-  }
-
   class Connection
-    def _and(*predicates)
-      !predicates.map {|p| !!p}.find_index(false)
-    end
-
     def initialize(params = {})
       @secret = params[:secret]
       @token  = params[:token]
-      @env    = params[:env] || :development
-      @config = CONFIGS[@env]
-      unless _and(@secret.is_a?(String), @token.is_a?(String))
+      @config = TEVO::Config.for_mode(params[:config])
+      unless @secret.is_a?(String) && @token.is_a?(String)
         raise ArgumentError.new('secret and token are required STRINGS')
       end
     end
