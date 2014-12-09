@@ -6,10 +6,12 @@ require 'faraday'
 require "curb"
 
 require File.expand_path("../config", __FILE__)
+require File.expand_path("../utils", __FILE__)
 
 module TEVO
   HTTPS_PORT = 443
   CONNECTION_TIMEOUT_SECONDS = 10
+
   class Connection
     def initialize(params = {})
       @secret = params[:secret]
@@ -31,7 +33,7 @@ module TEVO
         string_to_sign = "#{ string_to_sign }#{ payload }"
       end
 
-      signature = sign(string_to_sign)
+      signature = TEVO::Utils.sign(@secret, string_to_sign)
 
       puts "...sending"
       puts " #{method}: #{req_uri_alphabetized}"
@@ -92,16 +94,6 @@ module TEVO
         parts << @config[:url_base]
         parts << ":#{ @config[:port] }" if @config[:port] && @config[:port] != HTTPS_PORT
       end.join
-    end
-
-    def sign(string_to_sign)
-      Base64.encode64(
-        OpenSSL::HMAC.digest(
-          OpenSSL::Digest::Digest.new('sha256'),
-          @secret,
-          string_to_sign
-        )
-      ).chomp
     end
   end
 end
